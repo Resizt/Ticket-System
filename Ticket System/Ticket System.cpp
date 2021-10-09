@@ -18,6 +18,11 @@ void returnError();	// Error message for invalid amount of entries in the databa
 void menu();		// Menu of what function you want to choose
 void userMenu();	// The menu after selecting and confirming the user
 
+void nTickets	(int[], int[], int&, string[], int&, string[], string[], string[], int*); // Function for issuing new tickets.
+void rTickets	(int[], int[], int&, string[], int&, string[], string[], string[], int*); // Function for reviewing existing tickets.
+void ticketload (int[], int[], int&, string[], int&, string[], string[], string[], int*);
+void ticketSave (int[], int[], int&, string[], int&, string[], string[], string[], int*);
+
 int main() {
 	int* idNum = new int [10]; int reportNum[10], entries = 0, choice = 0;
 	string name[10];
@@ -33,7 +38,7 @@ int main() {
 
 		switch (choice) {
 		case 1:
-			(entries == 0)	? returnError() : ReturningID(idNum, reportNum, entries, name);
+			(entries == 0)	? returnError() : ReturningID(idNum, reportNum, entries, name); 
 			break;
 		case 2:
 			(entries >= 10)	? returnError() : NewID(idNum, reportNum, entries, name);
@@ -48,13 +53,112 @@ int main() {
 }
 
 void userSelect (int idNum[10], int reportNum[10], int& entries, string name[10], int& user) {
-	string confirm;
+	string* tickets = new string[20];
+	int* caseNum = new int;
+	string uTicket[20], sTicket[20];
+	ticketload(idNum, reportNum, entries, name, user, tickets, uTicket, sTicket, caseNum);
+	int confirm = 0, idConfirm;
 	system("CLS");
 	cout << "ID: " << idNum[user] << " " << "User: " << name[user] << endl;
 	cout << "---------------------------------" << endl;
+	userMenu();
+	cout << "1. Issue New Ticket" << endl;
+	cout << "2. Review Ticket(s)" << endl;
+	cout << "3. Change User" << endl;
+	cout << "4. Exit" << endl;
+	while (confirm != 4) {
 	cin >> confirm;
+		switch (confirm) {
+		case 1:
+			nTickets(idNum, reportNum, entries, name, user, tickets, uTicket, sTicket, caseNum);
+			ticketSave(idNum, reportNum, entries, name, user, tickets, uTicket, sTicket, caseNum);
+			break;
+		case 2:
+			rTickets(idNum, reportNum, entries, name, user, tickets, uTicket, sTicket, caseNum);
+			break;
+		case 3:
+			cout << "1. Database\n2. Manual Input" << endl;
+			cin >> idConfirm;
+			while (idConfirm < 0 || idConfirm > 2) {
+				cout << "You're input is invalid; Please Try Again" << endl;
+				cin >> idConfirm;
+			}
+			switch (idConfirm) {
+			case 1:
+				ReturningID(idNum, reportNum, entries, name);
+				break;
+			case 2:
+				ManualInput(idNum, reportNum, entries, name);
+				break;
+			}
+		case 4:
+			exit;
+			break;
+		}
+	}
 
+}
 
+void ticketload(int idNum[10], int reportNum[10], int& entries, string name[10], int& user, string ticket[20], string uTicket[20], string sTicket[20], int caseNum) {
+	ifstream ticketLoadin;
+	string data, placement;
+	caseNum = 0;
+	ticketLoadin.open(name[user] + ".txt");
+	
+	while (getline(ticketLoadin, data)) {
+
+		ticket[caseNum] =  data.substr(0, (data.find("UNSOLVED") || data.find("SOLVED")));
+		uTicket[caseNum] = data.substr(0, data.find("UNSOLVED"));
+		sTicket[caseNum] = data.substr(0, data.find("SOLVED"));
+		caseNum++;
+	}
+}
+void nTickets(int idNum[10], int reportNum[10], int& entries, string name[10], int& user, string ticket[20], string uTicket[20], string sTicket[20], int caseNum) {
+	ofstream ticketData;
+	string Data;
+	ticketData.open(name[user] + ".txt");
+	cout << "Please tell us the problem you're having?" << endl;
+	cout << "---------------------------------" << endl;
+	cout << "Reason: ";
+	cin >> ticket[caseNum];
+	ticket[caseNum] = "UNSOLVED " + ticket[caseNum];
+	caseNum++;
+}
+
+void rTickets(int idNum[10], int reportNum[10], int& entries, string name[10], int& user, string ticket[20], string uTicket[20], string sTicket[20], int caseNum) {
+	ticketload(idNum, reportNum, entries, name, user, ticket, uTicket, sTicket, caseNum);
+	string Solved, Unsolved, tickets;
+	ifstream SystemLoadin;
+	int st = 0, ut = 0;
+	SystemLoadin.open("Database.txt");
+
+	while (getline(SystemLoadin, tickets)) {
+		ticket[caseNum] = tickets;
+		uTicket[ut] = tickets.substr(tickets.find("UNSOLVED ") + 1);
+		sTicket[st] = tickets.substr(tickets.find("SOLVED ") + 1);
+		caseNum++;
+		ut++;
+		st++;
+	}
+	cout << "SOLVED TICKETS" << endl;
+	cout << "---------------------------------" << endl;
+	for (int tPrint = 0; tPrint < st; tPrint++) {
+		cout << tPrint + 1 << " " << sTicket[st] << endl;
+	}
+	cout << "UNSOLVED TICKETS" << endl;
+	cout << "---------------------------------" << endl;
+	for (int tPrint = 0; tPrint < ut; tPrint++) {
+		cout << tPrint + 1 << " " << uTicket[ut] << endl;
+	}
+}
+
+void ticketSave(int idNum[10], int reportNum[10], int& entries, string name[10], int& user, string ticket[20], string uTicket[20], string sTicket[20], int caseNum) {
+	ofstream ticketData;
+	string Data;
+	ticketData.open(name[user] + ".txt");
+	for (int Update = 0; Update < caseNum; Update++) {
+		ticketData << ticket[caseNum] << endl;
+	}
 }
 
 void NewID(int idNum[10], int reportNum[10], int& entries, string name[10]){
@@ -179,9 +283,9 @@ void menu() {
 void userMenu() {
 	system("CLS");
 	cout << "---------------------------------" << endl;
-	cout << "1. Returning ID" << endl;
-	cout << "2. New ID" << endl;
-	cout << "3. Manual Input" << endl;
+	cout << "1. Issue New Ticket" << endl;
+	cout << "2. Review Ticket(s)" << endl;
+	cout << "3. Change User" << endl;
 	cout << "4. Exit" << endl;
 	cout << "---------------------------------" << endl;
 }
